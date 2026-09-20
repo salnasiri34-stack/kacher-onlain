@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة الإدارة والتحكم المستقلة</title>
+    <title>قائمة الطلب الإلكتروني - طلبات العملاء</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
     <!-- مكتبات Firebase Firestore (CDN) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDfQcJRBmNEZsg3MKQjojiQCoMwLK rjfws",
@@ -25,9 +25,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         window.db = db;
-        window.dbFns = { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot };
+        window.dbFns = { collection, addDoc, getDocs, onSnapshot };
         
-        // تشغيل التحميل التلقائي بعد تهيئة القاعدة
         window.dispatchEvent(new Event('firebase-ready'));
     </script>
 
@@ -41,7 +40,6 @@
             --border-color: #334155;
             --success: #10b981;
             --danger: #ef4444;
-            --warning: #f59e0b;
         }
 
         * {
@@ -59,52 +57,96 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
-        .card {
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .product-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .product-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .product-card p {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 10px;
         }
 
         .btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 8px;
-            font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
             width: 100%;
         }
 
         .btn:hover { opacity: 0.9; }
-        .btn-danger { background: var(--danger); }
         .btn-success { background: var(--success); }
 
-        input, select, textarea {
+        .cart-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        input {
             width: 100%;
             background: var(--bg-color);
             border: 1px solid var(--border-color);
             color: var(--text-color);
             padding: 10px;
             border-radius: 8px;
+            margin-top: 10px;
             margin-bottom: 10px;
-        }
-
-        .header-title {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .header-title h2 {
-            color: var(--primary);
-            margin-bottom: 5px;
         }
 
         footer {
@@ -118,38 +160,32 @@
 <body>
 
     <div class="container">
-        <div class="header-title">
-            <h2><i class="fa-solid fa-globe"></i> الموقع المنفصل (لوحة الإدارة المستقلة)</h2>
-            <p style="color: var(--text-secondary); font-size: 0.9rem;">هذا الرابط يعمل بشكل مستقل تماماً لإدارة وتعديل محتوى النظام.</p>
+        <header>
+            <h1><i class="fa-solid fa-store"></i> المتجر الإلكتروني للطلبات</h1>
+            <p style="color: var(--text-secondary);">اختر منتجاتك وسوف يتم إرسال طلبك مباشرة إلى الكاشير.</p>
+        </header>
+
+        <!-- قائمة المنتجات المتاحة -->
+        <div style="margin-bottom: 15px;">
+            <h3><i class="fa-solid fa-utensils"></i> المنتجات المتاحة</h3>
+        </div>
+        <div id="customer-products-grid" class="products-grid">
+            <p style="color: var(--text-secondary);">جاري تحميل المنتجات...</p>
         </div>
 
-        <div class="card">
-            <h3><i class="fa-solid fa-chart-pie"></i> إحصائيات سريعة</h3>
-            <div style="display:flex; justify-content:space-around; text-align:center; margin-top:15px; background:var(--bg-color); padding:15px; border-radius:8px;">
-                <div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem;">الطلبات الكلية</p>
-                    <h3 id="stat-total-orders" style="color:var(--primary); font-size:1.4rem;">0</h3>
-                </div>
-                <div>
-                    <p style="color:var(--text-secondary); font-size:0.85rem;">إجمالي المبيعات</p>
-                    <h3 id="stat-total-rev" style="color:var(--success); font-size:1.4rem;">0 ر.س</h3>
-                </div>
+        <!-- سلة الطلب الخاصة بالعميل -->
+        <div class="cart-section">
+            <h3><i class="fa-solid fa-cart-shopping"></i> سلة الطلبات</h3>
+            <div id="cart-items-container" style="margin: 10px 0; max-height: 200px; overflow-y: auto;">
+                <p style="color: var(--text-secondary);">السلة فارغة حالياً.</p>
             </div>
-        </div>
-
-        <div class="card">
-            <h3><i class="fa-solid fa-plus-circle"></i> إضافة منتج جديد</h3>
-            <input type="text" id="sep-prod-name" placeholder="اسم المنتج">
-            <input type="number" id="sep-prod-price" placeholder="السعر (ر.س)">
-            <input type="file" id="sep-prod-file" accept="image/*" style="padding:8px;">
-            <button class="btn btn-success" onclick="addNewProductIndependent()">حفظ وإضافة المنتج</button>
-        </div>
-
-        <div class="card">
-            <h3><i class="fa-solid fa-boxes-stacked"></i> المنتجات الحالية في النظام</h3>
-            <div id="sep-products-list" style="margin-top: 15px;">
-                <p style="color: var(--text-secondary);">جاري تحميل المنتجات...</p>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px;">
+                <strong>المجموع الإجمالي: <span id="cart-total-price" style="color: var(--success);">0</span> ر.س</strong>
             </div>
+
+            <input type="text" id="customer-name" placeholder="اسم العميل الكريم">
+            <button class="btn btn-success" onclick="submitCustomerOrder()">إرسال الطلب للكاشير</button>
         </div>
     </div>
 
@@ -158,92 +194,108 @@
     </footer>
 
     <script>
+        let productsList = [];
+        let cart = [];
+
         window.addEventListener('firebase-ready', () => {
-            loadIndependentData();
+            fetchProductsForCustomer();
         });
 
-        function convertImageToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        async function addNewProductIndependent() {
-            const name = document.getElementById('sep-prod-name').value;
-            const price = document.getElementById('sep-prod-price').value;
-            const fileInput = document.getElementById('sep-prod-file');
-
-            if(!name || !price) {
-                alert("الرجاء إدخال اسم المنتج والسعر.");
-                return;
-            }
-
-            let imageBase64 = 'https://via.placeholder.com/150';
-            if(fileInput.files && fileInput.files[0]) {
-                try {
-                    imageBase64 = await convertImageToBase64(fileInput.files[0]);
-                } catch(e) {
-                    console.log(e);
-                }
-            }
-
-            try {
-                await window.dbFns.addDoc(window.dbFns.collection(window.db, "products"), {
-                    name, price: Number(price), image: imageBase64, options: "عادي"
-                });
-                alert("تم إضافة المنتج بنجاح من الموقع المستقل!");
-                document.getElementById('sep-prod-name').value = '';
-                document.getElementById('sep-prod-price').value = '';
-                document.getElementById('sep-prod-file').value = '';
-                loadIndependentData();
-            } catch(e) {
-                alert("خطأ: " + e.message);
-            }
-        }
-
-        async function loadIndependentData() {
-            try {
-                // جلب المنتجات
-                const prodSnapshot = await window.dbFns.getDocs(window.dbFns.collection(window.db, "products"));
-                let prodHtml = '';
-                prodSnapshot.forEach((docSnap) => {
-                    let p = docSnap.data();
-                    let id = docSnap.id;
-                    prodHtml += `
-                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:8px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${p.image}" style="width:35px; height:35px; object-fit:cover; border-radius:5px;">
-                                <span>${p.name} — <strong>${p.price} ر.س</strong></span>
+        // جلب المنتجات اللحظية من Firebase
+        function fetchProductsForCustomer() {
+            window.dbFns.onSnapshot(window.dbFns.collection(window.db, "products"), (snapshot) => {
+                productsList = [];
+                let html = '';
+                snapshot.forEach((doc) => {
+                    let p = doc.data();
+                    p.id = doc.id;
+                    productsList.push(p);
+                    html += `
+                        <div class="product-card">
+                            <div>
+                                <img src="${p.image || 'https://via.placeholder.com/150'}" alt="${p.name}">
+                                <h3>${p.name}</h3>
+                                <p>${p.price} ر.س</p>
                             </div>
-                            <button class="btn btn-danger" style="width:auto; padding:4px 10px; font-size:0.8rem;" onclick="deleteIndependentProduct('${id}')">حذف</button>
+                            <button class="btn" onclick="addToCart('${p.id}')">إضافة للسلة</button>
                         </div>
                     `;
                 });
-                document.getElementById('sep-products-list').innerHTML = prodHtml || '<p>لا توجد منتجات مسجلة.</p>';
-
-                // جلب الطلبات للإحصائيات
-                const orderSnapshot = await window.dbFns.getDocs(window.dbFns.collection(window.db, "orders"));
-                let totalOrders = orderSnapshot.size;
-                let totalRev = 0;
-                orderSnapshot.forEach(docSnap => {
-                    totalRev += (docSnap.data().total || 0);
-                });
-
-                document.getElementById('stat-total-orders').innerText = totalOrders;
-                document.getElementById('stat-total-rev').innerText = `${totalRev} ر.س`;
-
-            } catch(e) {
-                console.log("خطأ في جلب البيانات:", e);
-            }
+                document.getElementById('customer-products-grid').innerHTML = html || '<p style="color:var(--text-secondary);">لا توجد منتجات متاحة حالياً.</p>';
+            });
         }
 
-        async function deleteIndependentProduct(id) {
-            if(confirm("هل تريد حذف هذا المنتج؟")) {
-                await window.dbFns.deleteDoc(window.dbFns.doc(window.db, "products", id));
-                loadIndependentData();
+        function addToCart(productId) {
+            let product = productsList.find(p => p.id === productId);
+            if(!product) return;
+
+            let existing = cart.find(item => item.id === productId);
+            if(existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let container = document.getElementById('cart-items-container');
+            let total = 0;
+            if(cart.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">السلة فارغة حالياً.</p>';
+                document.getElementById('cart-total-price').innerText = '0';
+                return;
+            }
+
+            let html = '';
+            cart.forEach((item, index) => {
+                total += item.price * item.qty;
+                html += `
+                    <div class="cart-item">
+                        <span>${item.name} (×${item.qty})</span>
+                        <div>
+                            <span style="margin-left: 10px;">${item.price * item.qty} ر.س</span>
+                            <button onclick="removeFromCart(${index})" style="background:var(--danger); color:white; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;">X</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            document.getElementById('cart-total-price').innerText = total;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        async function submitCustomerOrder() {
+            let customerName = document.getElementById('customer-name').value.trim();
+            if(!customerName) {
+                alert("الرجاء إدخال اسمك الكريم قبل إرسال الطلب.");
+                return;
+            }
+            if(cart.length === 0) {
+                alert("السلة فارغة!");
+                return;
+            }
+
+            let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+            try {
+                await window.dbFns.addDoc(window.dbFns.collection(window.db, "orders"), {
+                    customerName: customerName,
+                    items: cart,
+                    total: total,
+                    status: "جديد",
+                    timestamp: new Date().toISOString()
+                });
+                alert("تم إرسال طلبك بنجاح إلى الكاشير!");
+                cart = [];
+                updateCartUI();
+                document.getElementById('customer-name').value = '';
+            } catch(e) {
+                alert("حدث خطأ أثناء إرسال الطلب: " + e.message);
             }
         }
     </script>

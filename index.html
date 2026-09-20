@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة الإدارة والتحكم المستقلة</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- مكتبات Firebase Firestore (CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfQcJRBmNEZsg3MKQjojiQCoMwLK rjfws",
+            authDomain: "kacher-71f82.firebaseapp.com",
+            projectId: "kacher-71f82",
+            storageBucket: "kacher-71f82.firebasestorage.app",
+            messagingSenderId: "628227415674",
+            appId: "1:628227415674:web:ccc3354fa405b7ae34a5c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window.db = db;
+        window.dbFns = { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot };
+        
+        // تشغيل التحميل التلقائي بعد تهيئة القاعدة
+        window.dispatchEvent(new Event('firebase-ready'));
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #3b82f6;
+            --border-color: #334155;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: var(--danger); }
+        .btn-success { background: var(--success); }
+
+        input, select, textarea {
+            width: 100%;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header-title h2 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        footer {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-title">
+            <h2><i class="fa-solid fa-globe"></i> الموقع المنفصل (لوحة الإدارة المستقلة)</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">هذا الرابط يعمل بشكل مستقل تماماً لإدارة وتعديل محتوى النظام.</p>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-chart-pie"></i> إحصائيات سريعة</h3>
+            <div style="display:flex; justify-content:space-around; text-align:center; margin-top:15px; background:var(--bg-color); padding:15px; border-radius:8px;">
+                <div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem;">الطلبات الكلية</p>
+                    <h3 id="stat-total-orders" style="color:var(--primary); font-size:1.4rem;">0</h3>
+                </div>
+                <div>
+                    <p style="color:var(--text-secondary); font-size:0.85rem;">إجمالي المبيعات</p>
+                    <h3 id="stat-total-rev" style="color:var(--success); font-size:1.4rem;">0 ر.س</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-plus-circle"></i> إضافة منتج جديد</h3>
+            <input type="text" id="sep-prod-name" placeholder="اسم المنتج">
+            <input type="number" id="sep-prod-price" placeholder="السعر (ر.س)">
+            <input type="file" id="sep-prod-file" accept="image/*" style="padding:8px;">
+            <button class="btn btn-success" onclick="addNewProductIndependent()">حفظ وإضافة المنتج</button>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-boxes-stacked"></i> المنتجات الحالية في النظام</h3>
+            <div id="sep-products-list" style="margin-top: 15px;">
+                <p style="color: var(--text-secondary);">جاري تحميل المنتجات...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        حقوق النشر محفوظة &copy; 2026 — sulaiman alnasiri
+    </footer>
+
+    <script>
+        window.addEventListener('firebase-ready', () => {
+            loadIndependentData();
+        });
+
+        function convertImageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function addNewProductIndependent() {
+            const name = document.getElementById('sep-prod-name').value;
+            const price = document.getElementById('sep-prod-price').value;
+            const fileInput = document.getElementById('sep-prod-file');
+
+            if(!name || !price) {
+                alert("الرجاء إدخال اسم المنتج والسعر.");
+                return;
+            }
+
+            let imageBase64 = 'https://via.placeholder.com/150';
+            if(fileInput.files && fileInput.files[0]) {
+                try {
+                    imageBase64 = await convertImageToBase64(fileInput.files[0]);
+                } catch(e) {
+                    console.log(e);
+                }
+            }
+
+            try {
+                await window.dbFns.addDoc(window.dbFns.collection(window.db, "products"), {
+                    name, price: Number(price), image: imageBase64, options: "عادي"
+                });
+                alert("تم إضافة المنتج بنجاح من الموقع المستقل!");
+                document.getElementById('sep-prod-name').value = '';
+                document.getElementById('sep-prod-price').value = '';
+                document.getElementById('sep-prod-file').value = '';
+                loadIndependentData();
+            } catch(e) {
+                alert("خطأ: " + e.message);
+            }
+        }
+
+        async function loadIndependentData() {
+            try {
+                // جلب المنتجات
+                const prodSnapshot = await window.dbFns.getDocs(window.dbFns.collection(window.db, "products"));
+                let prodHtml = '';
+                prodSnapshot.forEach((docSnap) => {
+                    let p = docSnap.data();
+                    let id = docSnap.id;
+                    prodHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-color); padding:10px; border-radius:8px; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="${p.image}" style="width:35px; height:35px; object-fit:cover; border-radius:5px;">
+                                <span>${p.name} — <strong>${p.price} ر.س</strong></span>
+                            </div>
+                            <button class="btn btn-danger" style="width:auto; padding:4px 10px; font-size:0.8rem;" onclick="deleteIndependentProduct('${id}')">حذف</button>
+                        </div>
+                    `;
+                });
+                document.getElementById('sep-products-list').innerHTML = prodHtml || '<p>لا توجد منتجات مسجلة.</p>';
+
+                // جلب الطلبات للإحصائيات
+                const orderSnapshot = await window.dbFns.getDocs(window.dbFns.collection(window.db, "orders"));
+                let totalOrders = orderSnapshot.size;
+                let totalRev = 0;
+                orderSnapshot.forEach(docSnap => {
+                    totalRev += (docSnap.data().total || 0);
+                });
+
+                document.getElementById('stat-total-orders').innerText = totalOrders;
+                document.getElementById('stat-total-rev').innerText = `${totalRev} ر.س`;
+
+            } catch(e) {
+                console.log("خطأ في جلب البيانات:", e);
+            }
+        }
+
+        async function deleteIndependentProduct(id) {
+            if(confirm("هل تريد حذف هذا المنتج؟")) {
+                await window.dbFns.deleteDoc(window.dbFns.doc(window.db, "products", id));
+                loadIndependentData();
+            }
+        }
+    </script>
+</body>
+</html>

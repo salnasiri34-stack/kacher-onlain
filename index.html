@@ -138,7 +138,7 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        input {
+        input, textarea {
             width: 100%;
             background: var(--bg-color);
             border: 1px solid var(--border-color);
@@ -162,7 +162,7 @@
     <div class="container">
         <header>
             <h1><i class="fa-solid fa-store"></i> المتجر الإلكتروني للطلبات</h1>
-            <p style="color: var(--text-secondary);">اختر منتجاتك وسوف يتم إرسال طلبك مباشرة إلى الكاشير.</p>
+            <p style="color: var(--text-secondary);">اختر منتجاتك وسوف يتم إرسال طلبك مباشرة إلى النظام.</p>
         </header>
 
         <!-- قائمة المنتجات المتاحة -->
@@ -184,8 +184,10 @@
                 <strong>المجموع الإجمالي: <span id="cart-total-price" style="color: var(--success);">0</span> ر.س</strong>
             </div>
 
-            <input type="text" id="customer-name" placeholder="اسم العميل الكريم">
-            <button class="btn btn-success" onclick="submitCustomerOrder()">إرسال الطلب للكاشير</button>
+            <input type="text" id="customer-name" placeholder="اسم العميل الكريم / رقم الطاولة">
+            <textarea id="customer-kitchen-notes" placeholder="ملاحظات إضافية للمطبخ (اختياري)..." rows="2"></textarea>
+            
+            <button class="btn btn-success" onclick="submitCustomerOrder()"><i class="fa-solid fa-paper-plane"></i> إرسال الطلب للكاشير</button>
         </div>
     </div>
 
@@ -233,7 +235,7 @@
             if(existing) {
                 existing.qty += 1;
             } else {
-                cart.push({ id: product.id, name: product.name, price: product.price, qty: 1 });
+                cart.push({ id: product.id, name: product.name, price: product.price, qty: 1, customOption: "عادي" });
             }
             updateCartUI();
         }
@@ -271,8 +273,10 @@
 
         async function submitCustomerOrder() {
             let customerName = document.getElementById('customer-name').value.trim();
+            let kitchenNotes = document.getElementById('customer-kitchen-notes').value.trim();
+
             if(!customerName) {
-                alert("الرجاء إدخال اسمك الكريم قبل إرسال الطلب.");
+                alert("الرجاء إدخال اسمك الكريم أو رقم الطاولة قبل إرسال الطلب.");
                 return;
             }
             if(cart.length === 0) {
@@ -280,20 +284,30 @@
                 return;
             }
 
-            let total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
             try {
+                // جلب عدد الطلبات الحالي لترتيب تسلسل رقم الطلب تلقائياً
+                const querySnapshot = await window.dbFns.getDocs(window.dbFns.collection(window.db, "orders"));
+                let sequentialNumber = querySnapshot.size + 1;
+
                 await window.dbFns.addDoc(window.dbFns.collection(window.db, "orders"), {
-                    customerName: customerName,
+                    orderNumber: sequentialNumber,
+                    tableName: customerName,
+                    tableNumber: customerName, // متوافق مع نظام الكاشير والمطبخ
                     items: cart,
-                    total: total,
-                    status: "جديد",
-                    timestamp: new Date().toISOString()
+                    kitchenNotes: kitchenNotes || "لا توجد ملاحظات",
+                    total: totalAmount,
+                    status: "قيد التجهيز",
+                    source: "online", // تمييزه لكي يظهر في قسم طلبات الإنترنت لدى المطبخ
+                    timestamp: new Date().toLocaleString()
                 });
-                alert("تم إرسال طلبك بنجاح إلى الكاشير!");
+
+                alert("تم إرسال طلبك بنجاح إلى النظام!");
                 cart = [];
                 updateCartUI();
                 document.getElementById('customer-name').value = '';
+                document.getElementById('customer-kitchen-notes').value = '';
             } catch(e) {
                 alert("حدث خطأ أثناء إرسال الطلب: " + e.message);
             }
